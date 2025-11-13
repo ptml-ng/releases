@@ -28,14 +28,8 @@ on:
         type: string
         default: ""
 
-      temp-prefix:
-        description: "Temp Prefix"
-        required: true
-        type: string
-        default: ""
-
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event.inputs.server-flavour }}-${{ github.event.inputs.company-name }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.server-flavour }}-${{ inputs.company-name }}
   cancel-in-progress: true
 
 jobs:
@@ -51,12 +45,12 @@ jobs:
           clientId: ${{ secrets.OAUTH_CLIENT_ID }}
           clientSecret: ${{ secrets.OAUTH_CLIENT_SECRET }}
           refreshToken: ${{ secrets.OAUTH_REFRESH_TOKEN }}
-          filename: "${{ github.event.inputs.temp-prefix }}-app-${{ inputs.company-name }}-*.apk"
+          filename: "temp-${{ inputs.prefix }}-app-${{ inputs.company-name }}-*.apk"
           folderId: ${{ secrets.DRIVE_FOLDER_ID }}
           destination: "./downloads/"
 
       - name: Rename artifacts
-        run: python3 -u scripts/rename_artifacts.py "./downloads/" "${{ github.event.inputs.prefix }}" "${{ github.event.inputs.temp-prefix }}"
+        run: python3 -u scripts/rename_artifacts.py "./downloads/" "${{ inputs.prefix }}" "temp-${{ inputs.prefix }}"
 
       - name: Upload apps to Google Drive
         uses: logickoder/g-drive-upload@main
