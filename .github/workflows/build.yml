@@ -1,0 +1,118 @@
+name: Send app to testers
+
+on:
+  workflow_dispatch:
+    inputs:
+      server-flavour:
+        description: "Server Flavour"
+        required: true
+        type: choice
+        default: "prod"
+        options:
+          - prod
+          - staging
+          - dev
+
+      company-name:
+        description: "Company Name"
+        required: true
+        type: choice
+        default: "ptml"
+        options:
+          - ptml
+          - grimaldiTogo
+
+      upload-to-firebase:
+        description: "Upload to Firebase"
+        required: true
+        type: boolean
+        default: true
+
+      app-repository:
+        description: "App Repository"
+        required: true
+        type: string
+        default: "ptml-ng/releases"
+
+      app-ref:
+        description: "App Branch/Tag/Commit"
+        required: false
+        type: string
+        default: "main"
+
+      prefix:
+        description: "Artifact Prefix"
+        required: true
+        type: string
+        default: ""
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event.inputs.server-flavour }}-${{ github.event.inputs.company-name }}
+  cancel-in-progress: true
+
+jobs:
+  build-app:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout releases repository
+        uses: actions/checkout@v4
+        with:
+          path: releases
+
+      - name: Checkout app repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.app-repository }}
+          ref: ${{ inputs.app-ref }}
+          path: app
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          cache: "gradle"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Get build values
+        id: build-values
+        working-directory: app
+        run: |
+          python3 -u ../releases/scripts/build_values.py "${{ inputs.company-name }}" "${{ inputs.server-flavour }}"
+
+      - uses: burrunan/gradle-cache-action@v3
+        name: Build app
+        with:
+          arguments: ${{ steps.build-values.outputs.BUILD_COMMAND }}
+          gradle-version: wrapper
+          build-root-directory: app
+
+      - name: Distribute APK splits to Firebase App Distribution
+        if: ${{ inputs.upload-to-firebase == true }}
+        uses: logickoder/firebase-distribution@v1
+        with:
+          serviceCredentialsFileContent: ${{ secrets.GCP_CREDENTIAL }}
+          file: "app/${{ steps.build-values.outputs.PATH }}/*.apk"
+          appId: ${{ steps.build-values.outputs.APP_ID }}
+          groups: QA
+          debug: "true"
+
+      - name: Rename artifacts
+        run: python3 -u ../releases/scripts/rename_artifacts.py "app/${{ steps.build-values.outputs.PATH }}" "${{ github.event.inputs.prefix }}"
+
+      - name: Upload app to Google Drive
+        uses: logickoder/g-drive-upload@main
+        with:
+          authType: "oauth"
+          clientId: ${{ secrets.OAUTH_CLIENT_ID }}
+          clientSecret: ${{ secrets.OAUTH_CLIENT_SECRET }}
+          refreshToken: ${{ secrets.OAUTH_REFRESH_TOKEN }}
+          filename: "app/${{ steps.build-values.outputs.PATH }}/*.apk"
+          folderId: ${{ secrets.DRIVE_FOLDER_ID }}
+          overwrite: "true"
+          mimeType: "application/vnd.android.package-archive"
