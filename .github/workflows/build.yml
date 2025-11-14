@@ -80,8 +80,9 @@ jobs:
         if: ${{ inputs.upload-to-firebase == true }}
         uses: logickoder/firebase-distribution@v1
         with:
+          workingDirectory: app
           serviceCredentialsFileContent: ${{ secrets.GCP_CREDENTIAL }}
-          file: "app/${{ steps.build-values.outputs.PATH }}/*.apk"
+          file: "${{ steps.build-values.outputs.PATH }}/*.apk"
           appId: ${{ steps.build-values.outputs.APP_ID }}
           groups: QA
           debug: "true"
