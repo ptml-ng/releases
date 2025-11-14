@@ -39,12 +39,8 @@ on:
         type: string
         default: ""
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.server-flavour }}-${{ inputs.company-name }}
-  cancel-in-progress: true
-
 jobs:
-  build-app:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout releases repository
