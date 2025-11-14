@@ -1,26 +1,19 @@
 name: Push app to production link
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       server-flavour:
         description: "Server Flavour"
         required: true
-        type: choice
+        type: string
         default: "prod"
-        options:
-          - prod
-          - staging
-          - dev
 
       company-name:
         description: "Company Name"
         required: true
-        type: choice
+        type: string
         default: "ptml"
-        options:
-          - ptml
-          - grimaldiTogo
 
       prefix:
         description: "Prefix"
