@@ -21,18 +21,6 @@ on:
         type: boolean
         default: true
 
-      app-repository:
-        description: "App Repository"
-        required: true
-        type: string
-        default: "ptml-ng/releases"
-
-      app-ref:
-        description: "App Branch/Tag/Commit"
-        required: false
-        type: string
-        default: "main"
-
       prefix:
         description: "Artifact Prefix"
         required: true
@@ -43,17 +31,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout releases repository
-        uses: actions/checkout@v4
-        with:
-          path: releases
-
       - name: Checkout app repository
         uses: actions/checkout@v4
         with:
-          repository: ${{ inputs.app-repository }}
-          ref: ${{ inputs.app-ref }}
           path: app
+
+      - name: Checkout releases repository
+        uses: actions/checkout@v4
+        with:
+          repository: ptml-ng/releases
+          path: releases
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Java
@@ -72,7 +59,7 @@ jobs:
         id: build-values
         working-directory: app
         run: |
-          python3 -u ../releases/scripts/build_values.py "${{ inputs.company-name }}" "${{ inputs.server-flavour }}"
+          python3 -u releases/scripts/build_values.py "${{ inputs.company-name }}" "${{ inputs.server-flavour }}"
 
       - uses: burrunan/gradle-cache-action@v3
         name: Build app
@@ -92,7 +79,7 @@ jobs:
           debug: "true"
 
       - name: Rename artifacts
-        run: python3 -u ../releases/scripts/rename_artifacts.py "app/${{ steps.build-values.outputs.PATH }}" "${{ inputs.prefix }}"
+        run: python3 -u releases/scripts/rename_artifacts.py "app/${{ steps.build-values.outputs.PATH }}" "${{ inputs.prefix }}"
 
       - name: Upload app to Google Drive
         uses: logickoder/g-drive-upload@main
