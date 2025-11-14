@@ -55,6 +55,14 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Display directory structure
+        run: |
+          echo "=== App Repository Structure ==="
+          find app -type f -o -type d | sort
+          echo ""
+          echo "=== Releases Repository Structure ==="
+          find releases -type f -o -type d | sort
+
       - name: Get build values
         id: build-values
         working-directory: app
