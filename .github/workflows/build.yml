@@ -67,7 +67,7 @@ jobs:
         id: build-values
         working-directory: app
         run: |
-          python3 -u ../releases/scripts/build_values.py "${{ inputs.company-name }}" "${{ inputs.server-flavour }}"
+          python3 -u ../releases/scripts/build_values.py "${{ inputs.server-flavour }}" "${{ inputs.company-name }}"
 
       - uses: burrunan/gradle-cache-action@v3
         name: Build app
