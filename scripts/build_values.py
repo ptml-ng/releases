@@ -99,7 +99,7 @@ def main() -> None:
         print("Could not find mobilesdk_app_id for the matched client", file=sys.stderr)
         sys.exit(8)
         
-    build_part = f"{company_name or ''}{server_flavour}"
+    build_part = f"{company_name or ''}{titlecase_first(server_flavour) if company_name else server_flavour}"
     path = f"app/build/outputs/apk/{build_part}/release/"
     build_command = f":app:assemble{build_part}Release"
 
