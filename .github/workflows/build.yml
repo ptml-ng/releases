@@ -88,7 +88,7 @@ jobs:
           debug: "true"
 
       - name: Rename artifacts
-        run: python3 -u ../releases/scripts/rename_artifacts.py "app/${{ steps.build-values.outputs.PATH }}" "${{ inputs.prefix }}"
+        run: python3 -u releases/scripts/rename_artifacts.py "app/${{ steps.build-values.outputs.PATH }}" "${{ inputs.prefix }}"
 
       - name: Upload app to Google Drive
         uses: logickoder/g-drive-upload@main
