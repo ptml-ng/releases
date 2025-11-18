@@ -11,7 +11,7 @@ on:
 
       company-name:
         description: "Company Name"
-        required: true
+        required: false
         type: string
         default: "ptml"
 
