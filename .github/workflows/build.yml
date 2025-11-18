@@ -13,7 +13,6 @@ on:
         description: "Company Name"
         required: false
         type: string
-        default: "ptml"
 
       upload-to-firebase:
         description: "Upload to Firebase"

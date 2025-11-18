@@ -18,7 +18,7 @@ def main() -> None:
         sys.exit(2)
 
     server_flavour = sys.argv[1]
-    company_name = sys.argv[2] if len(sys.argv) > 2 else None
+    company_name = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] else None
 
     # Load config.json only if company_name is provided
     company = None

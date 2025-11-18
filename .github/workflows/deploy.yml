@@ -13,7 +13,6 @@ on:
         description: "Company Name"
         required: false
         type: string
-        default: "ptml"
 
       prefix:
         description: "Prefix"
@@ -34,7 +33,7 @@ jobs:
           clientId: ${{ secrets.OAUTH_CLIENT_ID }}
           clientSecret: ${{ secrets.OAUTH_CLIENT_SECRET }}
           refreshToken: ${{ secrets.OAUTH_REFRESH_TOKEN }}
-          filename: "temp-${{ inputs.prefix }}-app-${{ inputs.company-name }}-*.apk"
+          filename: "temp-${{ inputs.prefix }}-app-${{ inputs.company-name && format('{0}-', inputs.company-name) || '' }}*.apk"
           folderId: ${{ secrets.DRIVE_FOLDER_ID }}
           destination: "./downloads/"
 
