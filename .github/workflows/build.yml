@@ -31,6 +31,12 @@ on:
         type: string
         default: ""
 
+      upload-to-github:
+        description: "Upload to GitHub Releases"
+        required: false
+        type: boolean
+        default: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -105,3 +111,14 @@ jobs:
           folderId: ${{ secrets.DRIVE_FOLDER_ID }}
           overwrite: "true"
           mimeType: "application/vnd.android.package-archive"
+
+      - name: Uploading Release
+        if: ${{ inputs.upload-to-github == true }}
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.REPO_TOKEN }}
+          file_glob: true
+          file: "app/${{ steps.build-values.outputs.PATH }}/*.apk"
+          tag: ${{ inputs.package-name || inputs.prefix }}
+          repo_name: ptml-ng/releases
+          overwrite: true
