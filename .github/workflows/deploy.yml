@@ -24,7 +24,12 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout releases repository
+        uses: actions/checkout@v4
+        with:
+          repository: ptml-ng/releases
+          path: releases
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download apps from Google Drive
         uses: logickoder/google-drive-download@main
@@ -38,7 +43,7 @@ jobs:
           destination: "./downloads/"
 
       - name: Rename artifacts
-        run: python3 -u scripts/rename_artifacts.py "./downloads/" "${{ inputs.prefix }}" "temp-${{ inputs.prefix }}"
+        run: python3 -u releases/scripts/rename_artifacts.py "./downloads/" "${{ inputs.prefix }}" "temp-${{ inputs.prefix }}"
 
       - name: Upload apps to Google Drive
         uses: logickoder/g-drive-upload@main
