@@ -42,28 +42,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout app repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: app
 
       - name: Checkout releases repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ptml-ng/releases
           path: releases
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: "17"
           distribution: "temurin"
           cache: "gradle"
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "24"
 
       # - name: Display directory structure
       #   run: |
