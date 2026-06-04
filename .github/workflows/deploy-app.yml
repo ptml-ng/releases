@@ -1,0 +1,64 @@
+name: Promote KMP Android build to production link
+
+# Modern promotion workflow. Pairs with build-app.yml: downloads `temp-<prefix>-<company>-<server>-…`
+# APKs from Drive, strips the `temp-` portion via rename_artifacts.py, re-uploads. Legacy callers
+# (driver-app, management-app) stick with deploy.yml until they modernize.
+
+on:
+  workflow_call:
+    inputs:
+      server-flavour:
+        description: "Server flavour"
+        required: true
+        type: string
+        default: "prod"
+      company-name:
+        description: "Company id"
+        required: false
+        type: string
+      prefix:
+        description: "Production prefix (sans the `temp-` portion)"
+        required: true
+        type: string
+        default: ""
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout releases repository
+        uses: actions/checkout@v6
+        with:
+          repository: ptml-ng/releases
+          path: releases
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download apps from Google Drive
+        uses: logickoder/google-drive-download@main
+        with:
+          authType: "oauth"
+          clientId: ${{ secrets.OAUTH_CLIENT_ID }}
+          clientSecret: ${{ secrets.OAUTH_CLIENT_SECRET }}
+          refreshToken: ${{ secrets.OAUTH_REFRESH_TOKEN }}
+          filename: "temp-${{ inputs.prefix }}-${{ inputs.company-name }}-${{ inputs.server-flavour }}-*.apk"
+          folderId: ${{ secrets.DRIVE_FOLDER_ID }}
+          destination: "./downloads/"
+
+      - name: Rename artifacts (strip `temp-` portion)
+        run: |
+          python3 -u releases/scripts/rename_artifacts.py \
+            "./downloads/" \
+            "${{ inputs.prefix }}-${{ inputs.company-name }}-${{ inputs.server-flavour }}" \
+            "temp-${{ inputs.prefix }}-${{ inputs.company-name }}-${{ inputs.server-flavour }}"
+
+      - name: Upload apps to Google Drive
+        uses: logickoder/g-drive-upload@main
+        with:
+          authType: "oauth"
+          clientId: ${{ secrets.OAUTH_CLIENT_ID }}
+          clientSecret: ${{ secrets.OAUTH_CLIENT_SECRET }}
+          refreshToken: ${{ secrets.OAUTH_REFRESH_TOKEN }}
+          filename: "./downloads/*.apk"
+          folderId: ${{ secrets.DRIVE_FOLDER_ID }}
+          overwrite: "true"
+          mimeType: "application/vnd.android.package-archive"

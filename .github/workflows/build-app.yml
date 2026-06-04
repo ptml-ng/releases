@@ -1,0 +1,137 @@
+name: Build KMP Android app
+
+# Modern reusable workflow for the flavorless KMP shape (:apps:android, -Pcompany/-Pserver).
+# Driven by scripts/build_app_values.py. Always renames artifacts as
+# `<prefix>-<company>-<server>-<file>` so different company×server builds don't overwrite each
+# other in the shared Drive folder. Legacy callers (driver-app, management-app) keep using
+# build.yml/build_values.py until they modernize.
+
+on:
+  workflow_call:
+    inputs:
+      server-flavour:
+        description: "Server (-Pserver=…)"
+        required: true
+        type: string
+        default: "prod"
+      company-name:
+        description: "Company id (matches config.json)"
+        required: false
+        type: string
+      package-name:
+        description: "Override package name (optional)"
+        required: false
+        type: string
+      upload-to-firebase:
+        description: "Upload APK splits to Firebase App Distribution"
+        required: true
+        type: boolean
+        default: true
+      prefix:
+        description: "Artifact prefix — company + server are appended automatically"
+        required: true
+        type: string
+        default: ""
+      upload-to-github:
+        description: "Upload to GitHub Releases"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout app repository
+        uses: actions/checkout@v6
+        with:
+          path: app
+
+      - name: Checkout releases repository
+        uses: actions/checkout@v6
+        with:
+          repository: ptml-ng/releases
+          path: releases
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          java-version: "17"
+          distribution: "temurin"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Get build values
+        id: build-values
+        working-directory: app
+        run: |
+          python3 -u ../releases/scripts/build_app_values.py \
+            "${{ inputs.server-flavour }}" \
+            "${{ inputs.company-name }}" \
+            "${{ inputs.package-name }}" \
+            --target android
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          # PRs read the most recent default-branch cache but don't push their own — keeps one
+          # warm cache shared across PRs instead of a cold cache per branch.
+          cache-read-only: ${{ github.ref != format('refs/heads/{0}', github.event.repository.default_branch) }}
+
+      - name: Cache ~/.konan
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('app/gradle/libs.versions.toml', 'app/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            konan-${{ runner.os }}-
+
+      - name: Build app
+        working-directory: app
+        run: |
+          ./gradlew ${{ steps.build-values.outputs.BUILD_COMMAND }} \
+            --build-cache --configuration-cache
+
+      - name: Distribute APK splits to Firebase App Distribution
+        if: ${{ inputs.upload-to-firebase == true }}
+        uses: logickoder/firebase-distribution@v1
+        with:
+          workingDirectory: app
+          serviceCredentialsFileContent: ${{ secrets.GCP_CREDENTIAL }}
+          file: "${{ steps.build-values.outputs.PATH }}/*.apk"
+          appId: ${{ steps.build-values.outputs.APP_ID }}
+          groups: QA
+          debug: "true"
+
+      - name: Rename artifacts
+        run: |
+          python3 -u releases/scripts/rename_artifacts.py \
+            "app/${{ steps.build-values.outputs.PATH }}" \
+            "${{ inputs.prefix }}-${{ inputs.company-name }}-${{ inputs.server-flavour }}"
+
+      - name: Upload app to Google Drive
+        uses: logickoder/g-drive-upload@main
+        with:
+          authType: "oauth"
+          clientId: ${{ secrets.OAUTH_CLIENT_ID }}
+          clientSecret: ${{ secrets.OAUTH_CLIENT_SECRET }}
+          refreshToken: ${{ secrets.OAUTH_REFRESH_TOKEN }}
+          filename: "app/${{ steps.build-values.outputs.PATH }}/*.apk"
+          folderId: ${{ secrets.DRIVE_FOLDER_ID }}
+          overwrite: "true"
+          mimeType: "application/vnd.android.package-archive"
+
+      - name: Uploading Release
+        if: ${{ inputs.upload-to-github == true }}
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.REPO_TOKEN }}
+          file_glob: true
+          file: "app/${{ steps.build-values.outputs.PATH }}/*.apk"
+          tag: ${{ inputs.package-name || inputs.prefix }}
+          repo_name: ptml-ng/releases
+          overwrite: true
