@@ -17,11 +17,53 @@ Target switch:
 """
 import argparse
 import json
+import re
 import sys
 
 from write_output import write_output
 
 ANDROID_GOOGLE_SERVICES = "apps/android/google-services.json"
+
+
+def load_jsonc(path):
+    """Parse a JSONC file: strip // and /* */ comments and trailing commas, then json.load."""
+    with open(path, "r", encoding="utf-8") as f:
+        text = f.read()
+    # Drop comments outside of string literals.
+    out = []
+    i, n = 0, len(text)
+    in_str = False
+    while i < n:
+        ch = text[i]
+        if in_str:
+            out.append(ch)
+            if ch == "\\" and i + 1 < n:
+                out.append(text[i + 1])
+                i += 2
+                continue
+            if ch == '"':
+                in_str = False
+            i += 1
+            continue
+        if ch == '"':
+            in_str = True
+            out.append(ch)
+            i += 1
+            continue
+        if ch == "/" and i + 1 < n and text[i + 1] == "/":
+            while i < n and text[i] != "\n":
+                i += 1
+            continue
+        if ch == "/" and i + 1 < n and text[i + 1] == "*":
+            i += 2
+            while i + 1 < n and not (text[i] == "*" and text[i + 1] == "/"):
+                i += 1
+            i += 2
+            continue
+        out.append(ch)
+        i += 1
+    cleaned = re.sub(r",(\s*[}\]])", r"\1", "".join(out))
+    return json.loads(cleaned)
 
 
 def main() -> int:
@@ -44,8 +86,7 @@ def main() -> int:
     # Resolve company → app.id from config.jsonc (mirrors the app's own resolveFlavor logic).
     if company:
         try:
-            with open("config.jsonc", "r", encoding="utf-8") as f:
-                cfg = json.load(f)
+            cfg = load_jsonc("config.jsonc")
         except Exception as e:
             print(f"Failed to read config.jsonc: {e}", file=sys.stderr)
             return 2
