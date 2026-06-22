@@ -41,13 +41,13 @@ def main() -> int:
         print("server-flavour is required (dev/staging/prod).", file=sys.stderr)
         return 1
 
-    # Resolve company → app.id from config.json (mirrors the app's own resolveFlavor logic).
+    # Resolve company → app.id from config.jsonc (mirrors the app's own resolveFlavor logic).
     if company:
         try:
-            with open("config.json", "r", encoding="utf-8") as f:
+            with open("config.jsonc", "r", encoding="utf-8") as f:
                 cfg = json.load(f)
         except Exception as e:
-            print(f"Failed to read config.json: {e}", file=sys.stderr)
+            print(f"Failed to read config.jsonc: {e}", file=sys.stderr)
             return 2
 
         match = next(
@@ -61,7 +61,7 @@ def main() -> int:
         if not package:
             package = match.get("app", {}).get("id")
             if not package:
-                print(f"Company {company} has no app.id in config.json", file=sys.stderr)
+                print(f"Company {company} has no app.id in config.jsonc", file=sys.stderr)
                 return 5
 
     if not package:
