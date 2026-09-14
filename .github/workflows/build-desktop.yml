@@ -25,6 +25,11 @@ on:
         required: true
         type: string
         default: ""
+      include-version:
+        description: "Suffix the installer filename with -v<version>"
+        required: false
+        type: boolean
+        default: false
       upload-to-github:
         description: "Upload to GitHub Releases"
         required: false
@@ -87,6 +92,7 @@ jobs:
         shell: bash
         run: |
           ./gradlew ${{ steps.build-values.outputs.BUILD_COMMAND }} \
+            -PincludeVersion=${{ inputs.include-version }} \
             --build-cache --configuration-cache
 
       - name: Rename installer
