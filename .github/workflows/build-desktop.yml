@@ -97,11 +97,18 @@ jobs:
 
       - name: Rename installer
         shell: bash
+        env:
+          BUILD_PATH: ${{ steps.build-values.outputs.PATH }}
+          ARTIFACT_PREFIX: ${{ inputs.prefix }}
+          ARTIFACT_COMPANY: ${{ inputs.company-name }}
+          ARTIFACT_SERVER: ${{ inputs.server-flavour }}
         run: |
-          python3 -u releases/scripts/rename_artifacts.py \
-            "app/${{ steps.build-values.outputs.PATH }}" \
-            "${{ inputs.prefix }}-${{ inputs.company-name }}-${{ inputs.server-flavour }}" \
-            --ext msi
+          name="$ARTIFACT_PREFIX"
+          if [ -n "$ARTIFACT_COMPANY" ]; then
+            name="${name}-${ARTIFACT_COMPANY}"
+          fi
+          name="${name}-${ARTIFACT_SERVER}"
+          python3 -u releases/scripts/rename_artifacts.py "app/$BUILD_PATH" "$name" --ext msi
 
       - name: Upload installer to Google Drive
         uses: logickoder/g-drive-upload@main
