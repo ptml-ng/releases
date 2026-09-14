@@ -32,6 +32,11 @@ on:
         required: true
         type: string
         default: ""
+      include-version:
+        description: "Suffix the APK filenames with -v<version>"
+        required: false
+        type: boolean
+        default: false
       upload-to-github:
         description: "Upload to GitHub Releases"
         required: false
@@ -94,6 +99,7 @@ jobs:
         working-directory: app
         run: |
           ./gradlew ${{ steps.build-values.outputs.BUILD_COMMAND }} \
+            -PincludeVersion=${{ inputs.include-version }} \
             --build-cache --configuration-cache
 
       - name: Distribute APK splits to Firebase App Distribution
