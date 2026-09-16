@@ -41,7 +41,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout repos
-        uses: ./.github/actions/checkout-repos
+        uses: ptml-ng/releases/.github/actions/checkout-repos@main
         with:
           checkout-app: "true"
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -91,7 +91,7 @@ jobs:
 
       - name: Compute artifact name
         id: artifact-name
-        uses: ./.github/actions/compute-artifact-name
+        uses: ptml-ng/releases/.github/actions/compute-artifact-name@main
         with:
           prefix: ${{ inputs.prefix }}
           company-name: ${{ inputs.company-name }}
@@ -105,7 +105,7 @@ jobs:
         run: python3 -u releases/scripts/rename_artifacts.py "app/$BUILD_PATH" "$ARTIFACT_NAME" --ext msi
 
       - name: Upload installer to Google Drive
-        uses: ./.github/actions/upload-to-drive
+        uses: ptml-ng/releases/.github/actions/upload-to-drive@main
         with:
           filename: "app/${{ steps.build-values.outputs.PATH }}/*.msi"
           mime-type: "application/x-msi"
@@ -116,7 +116,7 @@ jobs:
 
       - name: Uploading Release
         if: ${{ inputs.upload-to-github == true }}
-        uses: ./.github/actions/upload-github-release
+        uses: ptml-ng/releases/.github/actions/upload-github-release@main
         with:
           file-glob: "app/${{ steps.build-values.outputs.PATH }}/*.msi"
           tag: ${{ inputs.package-name || inputs.prefix }}

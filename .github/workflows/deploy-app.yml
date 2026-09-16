@@ -27,13 +27,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repos
-        uses: ./.github/actions/checkout-repos
+        uses: ptml-ng/releases/.github/actions/checkout-repos@main
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Compute artifact name
         id: artifact-name
-        uses: ./.github/actions/compute-artifact-name
+        uses: ptml-ng/releases/.github/actions/compute-artifact-name@main
         with:
           prefix: ${{ inputs.prefix }}
           company-name: ${{ inputs.company-name }}
@@ -60,7 +60,7 @@ jobs:
             "temp-$ARTIFACT_NAME"
 
       - name: Upload apps to Google Drive
-        uses: ./.github/actions/upload-to-drive
+        uses: ptml-ng/releases/.github/actions/upload-to-drive@main
         with:
           filename: "./downloads/*.apk"
           mime-type: "application/vnd.android.package-archive"

@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repos
-        uses: ./.github/actions/checkout-repos
+        uses: ptml-ng/releases/.github/actions/checkout-repos@main
         with:
           checkout-app: "true"
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -95,7 +95,7 @@ jobs:
         run: python3 -u releases/scripts/rename_artifacts.py "app/$BUILD_PATH" "$ARTIFACT_PREFIX"
 
       - name: Upload app to Google Drive
-        uses: ./.github/actions/upload-to-drive
+        uses: ptml-ng/releases/.github/actions/upload-to-drive@main
         with:
           filename: "app/${{ steps.build-values.outputs.PATH }}/*.apk"
           mime-type: "application/vnd.android.package-archive"
@@ -106,7 +106,7 @@ jobs:
 
       - name: Uploading Release
         if: ${{ inputs.upload-to-github == true }}
-        uses: ./.github/actions/upload-github-release
+        uses: ptml-ng/releases/.github/actions/upload-github-release@main
         with:
           file-glob: "app/${{ steps.build-values.outputs.PATH }}/*.apk"
           tag: ${{ inputs.package-name || inputs.prefix }}

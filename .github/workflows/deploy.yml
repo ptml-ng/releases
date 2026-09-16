@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repos
-        uses: ./.github/actions/checkout-repos
+        uses: ptml-ng/releases/.github/actions/checkout-repos@main
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -46,7 +46,7 @@ jobs:
         run: python3 -u releases/scripts/rename_artifacts.py "./downloads/" "$ARTIFACT_PREFIX" "temp-$ARTIFACT_PREFIX"
 
       - name: Upload apps to Google Drive
-        uses: ./.github/actions/upload-to-drive
+        uses: ptml-ng/releases/.github/actions/upload-to-drive@main
         with:
           filename: "./downloads/*.apk"
           mime-type: "application/vnd.android.package-archive"
