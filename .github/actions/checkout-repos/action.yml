@@ -1,0 +1,27 @@
+name: "Checkout app + releases repos"
+description: >-
+  Checks out the calling app repository (optional) to `app/` and this releases repository to
+  `releases/` — the same pair of checkouts every build/deploy workflow needs.
+inputs:
+  checkout-app:
+    description: "Also checkout the calling app repository to app/ (build workflows need this; deploy workflows don't build anything, so they skip it)"
+    required: false
+    default: "false"
+  github-token:
+    description: "Token for checking out ptml-ng/releases"
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Checkout app repository
+      if: ${{ inputs.checkout-app == 'true' }}
+      uses: actions/checkout@v6
+      with:
+        path: app
+
+    - name: Checkout releases repository
+      uses: actions/checkout@v6
+      with:
+        repository: ptml-ng/releases
+        path: releases
+        token: ${{ inputs.github-token }}

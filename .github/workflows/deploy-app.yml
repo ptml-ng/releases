@@ -26,12 +26,18 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout releases repository
-        uses: actions/checkout@v6
+      - name: Checkout repos
+        uses: ./.github/actions/checkout-repos
         with:
-          repository: ptml-ng/releases
-          path: releases
-          token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute artifact name
+        id: artifact-name
+        uses: ./.github/actions/compute-artifact-name
+        with:
+          prefix: ${{ inputs.prefix }}
+          company-name: ${{ inputs.company-name }}
+          server-flavour: ${{ inputs.server-flavour }}
 
       - name: Download apps from Google Drive
         uses: logickoder/google-drive-download@main
@@ -40,25 +46,25 @@ jobs:
           clientId: ${{ secrets.OAUTH_CLIENT_ID }}
           clientSecret: ${{ secrets.OAUTH_CLIENT_SECRET }}
           refreshToken: ${{ secrets.OAUTH_REFRESH_TOKEN }}
-          filename: "temp-${{ inputs.prefix }}-${{ inputs.company-name }}-${{ inputs.server-flavour }}-*.apk"
+          filename: "temp-${{ steps.artifact-name.outputs.value }}-*.apk"
           folderId: ${{ secrets.DRIVE_FOLDER_ID }}
           destination: "./downloads/"
 
       - name: Rename artifacts (strip `temp-` portion)
+        env:
+          ARTIFACT_NAME: ${{ steps.artifact-name.outputs.value }}
         run: |
           python3 -u releases/scripts/rename_artifacts.py \
             "./downloads/" \
-            "${{ inputs.prefix }}-${{ inputs.company-name }}-${{ inputs.server-flavour }}" \
-            "temp-${{ inputs.prefix }}-${{ inputs.company-name }}-${{ inputs.server-flavour }}"
+            "$ARTIFACT_NAME" \
+            "temp-$ARTIFACT_NAME"
 
       - name: Upload apps to Google Drive
-        uses: logickoder/g-drive-upload@main
+        uses: ./.github/actions/upload-to-drive
         with:
-          authType: "oauth"
-          clientId: ${{ secrets.OAUTH_CLIENT_ID }}
-          clientSecret: ${{ secrets.OAUTH_CLIENT_SECRET }}
-          refreshToken: ${{ secrets.OAUTH_REFRESH_TOKEN }}
           filename: "./downloads/*.apk"
-          folderId: ${{ secrets.DRIVE_FOLDER_ID }}
-          overwrite: "true"
-          mimeType: "application/vnd.android.package-archive"
+          mime-type: "application/vnd.android.package-archive"
+          client-id: ${{ secrets.OAUTH_CLIENT_ID }}
+          client-secret: ${{ secrets.OAUTH_CLIENT_SECRET }}
+          refresh-token: ${{ secrets.OAUTH_REFRESH_TOKEN }}
+          folder-id: ${{ secrets.DRIVE_FOLDER_ID }}

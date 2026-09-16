@@ -1,0 +1,36 @@
+name: "Compute artifact name"
+description: >-
+  Joins prefix, optional company, and server-flavour into one `-`-separated name segment,
+  skipping the company segment when empty (avoids a double hyphen). Single source of truth for
+  this join — every caller that previously duplicated the bash conditional should use this
+  instead.
+inputs:
+  prefix:
+    description: "Artifact prefix (e.g. temp-driver)"
+    required: true
+  company-name:
+    description: "Company id — omitted from the joined name when blank"
+    required: false
+  server-flavour:
+    description: "Server flavour (dev/staging/prod)"
+    required: true
+outputs:
+  value:
+    description: "The joined name, e.g. <prefix>-<company>-<server> or <prefix>-<server>"
+    value: ${{ steps.compute.outputs.value }}
+runs:
+  using: composite
+  steps:
+    - id: compute
+      shell: bash
+      env:
+        ARTIFACT_PREFIX: ${{ inputs.prefix }}
+        ARTIFACT_COMPANY: ${{ inputs.company-name }}
+        ARTIFACT_SERVER: ${{ inputs.server-flavour }}
+      run: |
+        name="$ARTIFACT_PREFIX"
+        if [ -n "$ARTIFACT_COMPANY" ]; then
+          name="${name}-${ARTIFACT_COMPANY}"
+        fi
+        name="${name}-${ARTIFACT_SERVER}"
+        echo "value=$name" >> "$GITHUB_OUTPUT"

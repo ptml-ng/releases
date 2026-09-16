@@ -47,17 +47,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout app repository
-        uses: actions/checkout@v6
+      - name: Checkout repos
+        uses: ./.github/actions/checkout-repos
         with:
-          path: app
-
-      - name: Checkout releases repository
-        uses: actions/checkout@v6
-        with:
-          repository: ptml-ng/releases
-          path: releases
-          token: ${{ secrets.GITHUB_TOKEN }}
+          checkout-app: "true"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Java
         uses: actions/setup-java@v5
@@ -113,31 +107,34 @@ jobs:
           groups: QA
           debug: "true"
 
+      - name: Compute artifact name
+        id: artifact-name
+        uses: ./.github/actions/compute-artifact-name
+        with:
+          prefix: ${{ inputs.prefix }}
+          company-name: ${{ inputs.company-name }}
+          server-flavour: ${{ inputs.server-flavour }}
+
       - name: Rename artifacts
-        run: |
-          python3 -u releases/scripts/rename_artifacts.py \
-            "app/${{ steps.build-values.outputs.PATH }}" \
-            "${{ inputs.prefix }}-${{ inputs.company-name }}-${{ inputs.server-flavour }}"
+        env:
+          BUILD_PATH: ${{ steps.build-values.outputs.PATH }}
+          ARTIFACT_NAME: ${{ steps.artifact-name.outputs.value }}
+        run: python3 -u releases/scripts/rename_artifacts.py "app/$BUILD_PATH" "$ARTIFACT_NAME"
 
       - name: Upload app to Google Drive
-        uses: logickoder/g-drive-upload@main
+        uses: ./.github/actions/upload-to-drive
         with:
-          authType: "oauth"
-          clientId: ${{ secrets.OAUTH_CLIENT_ID }}
-          clientSecret: ${{ secrets.OAUTH_CLIENT_SECRET }}
-          refreshToken: ${{ secrets.OAUTH_REFRESH_TOKEN }}
           filename: "app/${{ steps.build-values.outputs.PATH }}/*.apk"
-          folderId: ${{ secrets.DRIVE_FOLDER_ID }}
-          overwrite: "true"
-          mimeType: "application/vnd.android.package-archive"
+          mime-type: "application/vnd.android.package-archive"
+          client-id: ${{ secrets.OAUTH_CLIENT_ID }}
+          client-secret: ${{ secrets.OAUTH_CLIENT_SECRET }}
+          refresh-token: ${{ secrets.OAUTH_REFRESH_TOKEN }}
+          folder-id: ${{ secrets.DRIVE_FOLDER_ID }}
 
       - name: Uploading Release
         if: ${{ inputs.upload-to-github == true }}
-        uses: svenstaro/upload-release-action@v2
+        uses: ./.github/actions/upload-github-release
         with:
-          repo_token: ${{ secrets.REPO_TOKEN }}
-          file_glob: true
-          file: "app/${{ steps.build-values.outputs.PATH }}/*.apk"
+          file-glob: "app/${{ steps.build-values.outputs.PATH }}/*.apk"
           tag: ${{ inputs.package-name || inputs.prefix }}
-          repo_name: ptml-ng/releases
-          overwrite: true
+          repo-token: ${{ secrets.REPO_TOKEN }}

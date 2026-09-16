@@ -1,0 +1,22 @@
+name: "Upload GitHub Release"
+description: "Publishes matching file(s) as a GitHub Release on this repo (ptml-ng/releases)."
+inputs:
+  file-glob:
+    description: "Glob pattern of file(s) to attach"
+    required: true
+  tag:
+    description: "Release tag"
+    required: true
+  repo-token:
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ inputs.repo-token }}
+        file_glob: true
+        file: ${{ inputs.file-glob }}
+        tag: ${{ inputs.tag }}
+        repo_name: ptml-ng/releases
+        overwrite: true
