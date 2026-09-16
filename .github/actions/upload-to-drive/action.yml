@@ -1,0 +1,30 @@
+name: "Upload artifact to Google Drive"
+description: "Uploads matching file(s) to the shared Drive folder via OAuth, overwriting existing."
+inputs:
+  filename:
+    description: "Glob pattern of file(s) to upload"
+    required: true
+  mime-type:
+    description: "MIME type of the uploaded file(s)"
+    required: true
+  client-id:
+    required: true
+  client-secret:
+    required: true
+  refresh-token:
+    required: true
+  folder-id:
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: logickoder/g-drive-upload@main
+      with:
+        authType: "oauth"
+        clientId: ${{ inputs.client-id }}
+        clientSecret: ${{ inputs.client-secret }}
+        refreshToken: ${{ inputs.refresh-token }}
+        filename: ${{ inputs.filename }}
+        folderId: ${{ inputs.folder-id }}
+        overwrite: "true"
+        mimeType: ${{ inputs.mime-type }}
